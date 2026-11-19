@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131a">
+<title>Evertale Daily Bot — Prototype</title>
+<style>
+:root{color-scheme:dark;--bg:#10131a;--panel:#191f2a;--line:#2b3443;--muted:#a7b0c0;--green:#76e0a1;--red:#ff8888}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f6fb;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:760px;margin:auto;padding:18px}
+header{display:flex;gap:12px;align-items:center;margin:8px 0 20px}
+.logo{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;background:#24372f;font-size:24px}
+h1{font-size:21px;margin:0} .sub{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h2{font-size:16px;margin:0 0 12px}.muted{color:var(--muted)}.pill{font-size:12px;border-radius:999px;padding:5px 9px;background:#34303a;color:#ffd5a6}
+label{display:block;margin:10px 0 6px;color:#dbe1eb;font-size:13px}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#10151e;color:white;font:inherit}
+.note{font-size:12px;line-height:1.5;color:var(--muted)}
+.task{display:flex;gap:10px;align-items:center;padding:9px 0}.task input{width:18px;height:18px;accent-color:var(--green)}
+.actions{display:flex;gap:10px;margin-top:14px}button{border:0;border-radius:10px;padding:12px 14px;font:600 14px system-ui;cursor:pointer;flex:1}
+.start{background:var(--green);color:#102018}.stop{background:#343b48;color:white}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#111720;border:1px solid var(--line);border-radius:12px;padding:11px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{display:block;margin-top:5px;font-size:14px}
+.terminal{background:#090d12;border-radius:10px;padding:12px;min-height:150px;max-height:280px;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:#b7f4cc;white-space:pre-wrap;overflow-wrap:anywhere}
+footer{font-size:12px;color:var(--muted);text-align:center;padding:16px}
+@media(max-width:420px){main{padding:12px}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}}
+</style>
+</head>
+<body><main>
+<header><div class="logo">⚙</div><div><h1>Evertale Daily Bot</h1><div class="sub">Prototype v0.1 · Mode simulasi</div></div></header>
+<div class="card">
+ <div class="row"><h2>Status bot</h2><span id="status" class="pill">SIMULASI / IDLE</span></div>
+ <p class="note">Versi ini hanya menguji tampilan dan alur kerja. Belum terhubung ke server Evertale dan tidak melakukan login atau menjalankan daily sungguhan.</p>
+ <label for="profile">Nama profil lokal (opsional)</label><input id="profile" placeholder="Contoh: Akun tes" maxlength="40">
+ <div class="note" style="margin-top:8px">Jangan masukkan restore code, password, atau token ke prototipe ini.</div>
+</div>
+<div class="card">
+ <h2>Tugas daily (simulasi)</h2>
+ <div class="task"><input type="checkbox" checked id="t1"><label for="t1" style="margin:0">Periksa hadiah login</label></div>
+ <div class="task"><input type="checkbox" checked id="t2"><label for="t2" style="margin:0">Periksa misi harian</label></div>
+ <div class="task"><input type="checkbox" checked id="t3"><label for="t3" style="margin:0">Periksa hadiah tersedia</label></div>
+ <div class="actions"><button class="start" id="start">Mulai simulasi</button><button class="stop" id="stop">Stop</button></div>
+</div>
+<div class="card">
+ <h2>Statistik sesi</h2><div class="stats">
+  <div class="stat"><small>Profil</small><strong id="statProfile">Belum diatur</strong></div>
+  <div class="stat"><small>Tugas dipilih</small><strong id="statTasks">3</strong></div>
+  <div class="stat"><small>Selesai</small><strong id="statDone">0 / 3</strong></div>
+ </div>
+</div>
+<div class="card">
+ <div class="row" style="margin-bottom:12px"><h2>Terminal log</h2><button id="clear" class="stop" style="flex:0 0 auto;padding:7px 10px">Bersihkan</button></div>
+ <div id="terminal" class="terminal">[siap] Prototipe dimuat.\n[info] Mode simulasi aktif; tidak ada koneksi ke Evertale.</div>
+</div>
+<footer>Prototipe lokal untuk perencanaan. Belum merupakan bot operasional.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id); let running=false, timer=null, done=0;
+function stamp(){return new Date().toLocaleTimeString('id-ID')}
+function log(s){$('terminal').textContent += `\\n[${stamp()}] ${s}`;$('terminal').scrollTop=$('terminal').scrollHeight}
+function tasks(){return [['t1','Periksa hadiah login'],['t2','Periksa misi harian'],['t3','Periksa hadiah tersedia']].filter(x=>$(x[0]).checked)}
+function refresh(){const t=tasks();$('statTasks').textContent=t.length;$('statDone').textContent=`${Math.min(done,t.length)} / ${t.length}`;$('statProfile').textContent=$('profile').value.trim()||'Belum diatur'}
+$('profile').addEventListener('input',refresh);['t1','t2','t3'].forEach(id=>$(id).addEventListener('change',refresh));
+$('start').onclick=()=>{if(running)return;const t=tasks();if(!t.length){log('Pilih minimal satu tugas.');return}running=true;done=0;$('status').textContent='SIMULASI / BERJALAN';refresh();log('Simulasi dimulai. Tidak ada permintaan yang dikirim ke server game.');let i=0;timer=setInterval(()=>{if(!running)return;if(i>=t.length){clearInterval(timer);timer=null;running=false;$('status').textContent='SIMULASI / SELESAI';log('Simulasi selesai. Semua langkah contoh telah diproses.');return}log('Simulasi tugas: '+t[i][1]);i++;done=i;refresh()},900)};
+$('stop').onclick=()=>{if(timer)clearInterval(timer);timer=null;if(running)log('Simulasi dihentikan oleh pengguna.');running=false;$('status').textContent='SIMULASI / IDLE';};
+$('clear').onclick=()=>$('terminal').textContent='[info] Log dibersihkan.';
+refresh();
+</script></body></html>
